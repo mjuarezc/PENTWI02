@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap Test</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+
+    <!-- Bootstrap Date-Picker Plugin -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/js/bootstrap-datepicker.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/css/bootstrap-datepicker3.css"/>
+    <script>
+        $(document).ready(function() {
+            var apiURL = 'https://api.fixer.io/';
+            var date = '2017-12-30';
+            var base = 'USD';
+            var date_input = $('#currency-date');
+            date_input.val(date);
+            var options={
+                format: 'yyyy-mm-dd',
+                todayHighlight: true,
+                autoclose: true,
+            };
+            date_input.datepicker(options);
+            $('#example').DataTable({
+                "columnDefs": [ {
+                    "targets": -1,
+                    "data": null,
+                    "render": function ( data, type, row, meta ) {
+                        return '<button type="button" name="edit" class="btn btn-default" > <span class="glyphicon glyphicon-pencil"></span> </button>'+
+                            '<button type="button" name="delete" class="btn btn-danger" > <span class="glyphicon glyphicon-trash"></span> </button>'
+                            ;
+                    }
+                } ]
+            });
+            createTable(apiURL, date, base);
+
+            $('#currency-base, #currency-date').change(function (event) {
+                console.log(event);
+                var base = $('#currency-base').val();
+                var date = $('#currency-date').val();
+                if(base && date) {
+                    createTable(apiURL,date,base)
+                } else {
+                    alert('Verify input data');
+                }
+            });
+        } );
+
+        function createTable(url, date, base) {
+            var table = $('#example').DataTable();
+            table.clear();
+            $.get(url + date,{base : base })
+                .done(function (data) {
+                    for(var rate in data.rates) {
+                        table.row.add( [
+                            data.date,
+                            data.base,
+                            rate,
+                            data.rates[rate],
+                            ''
+                        ] ).draw( false );
+                    }
+                    $(':button[name="delete"]').click(function() {
+                        table.row( $(this).parents('tr') ).remove().draw();
+                    } );
+
+                    $(':button[name="edit"]').click(function() {
+                        var row = table.row( $(this).parents('tr') );
+                        console.log(row);
+                        var data = row.data();
+                        $('#date-form').val(data[0]);
+                        $('#base-form').val(data[1]);
+                        $('#currency-form').val(data[2]);
+                        $('#value-form').val(data[3]);
+                        $('#modal').modal('show').submit(function (event) {
+                            event.preventDefault();
+                            data[0]=$('#date-form').val();
+                            data[1]=$('#base-form').val();
+                            data[2]=$('#currency-form').val();
+                            data[3]=$('#value-form').val();
+                            console.log(data);
+                            row.data(data).draw();
+                            $('#modal').modal('hide');
+                        });
+                    } );
+
+                }).fail(function (err) {
+                    console.log(err);
+                });
+        }
+    </script>
+</head>
+<body>
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                    data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="index.html">Fixer Example</a>
+        </div>
+
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                <li ><a href="index.html">Home</a></li>
+                <li class="active"><a href="data.html">Data</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container">
+    <div class="row">
+        <div class="page-header">
+            <h1>Rates</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-1 col-xs-2 text-right">
+            <h4>Base</h4>
+        </div>
+        <div class="col-md-2 col-xs-4">
+            <select id="currency-base" style="width: 100%; margin-top: 7px">
+                <option value="USD">USD</option>
+                <option value="MXN">MXN</option>
+            </select>
+        </div>
+        <div class="col-md-1 col-xs-2 text-right">
+            <h4>Date</h4>
+        </div>
+        <div class="col-md-2 col-xs-4">
+            <input  id="currency-date" name="date" placeholder="YYYY-MM-DD" type="text"  style="width: 100%; margin-top: 7px"/>
+        </div>
+    </div>
+    <div class="row">
+        <table id="example" class="display" cellspacing="0" width="100%">
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Base</th>
+                <th>Currency</th>
+                <th>Value</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tfoot>
+            <tr>
+                <th>Date</th>
+                <th>Base</th>
+                <th>Currency</th>
+                <th>Value</th>
+                <th>Actions</th>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+
+<footer class="container-fluid text-center">
+    <p>Footer Text</p>
+</footer>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="form">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Modal title</h4>
+                </div>
+                <div class="modal-body">
+
+                        <input id="id-currency" value="" hidden>
+                        <div class="form-group">
+                            <label for="date-form" class="control-label">Date</label>
+                            <input type="text" name="date" id="date-form" value="" disabled class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="base-form" class="control-label">Base</label>
+                            <input type="text" name="base" id="base-form" value="" disabled class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="currency-form" class="control-label">Currency</label>
+                            <input type="text" name="currency" id="currency-form" value="" disabled class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="value-form" class="control-label">Value</label>
+                            <input type="text" name="value" id="value-form" value="" class="form-control">
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
